@@ -1,0 +1,16 @@
+{
+  "data_path": "Rostros",
+  "cascades": {
+    "frontal": "Cascades/haarcascade_frontalface_default.xml",
+    "perfil": "Cascades/haarcascade_profileface.xml"
+  },
+  "landmarks_model": "Models/shape_predictor_68_face_landmarks.dat",
+  "output_model": "Models/modeloLBPHFace.xml",
+  "mapping_file": "Models/mapping_labels.json",
+  "n_max_per_user": 200,
+  "face_size": [150, 150],
+  "umbral_reconocimiento": 70,
+  "tiempo_validez": 10.0,
+  "life_timeout": 5.0,
+  "ear_buffer_len": 7
+}
