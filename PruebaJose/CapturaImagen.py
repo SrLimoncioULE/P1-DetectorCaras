@@ -3,45 +3,37 @@ import os
 import time
 import numpy as np
 
-# =========================
-# 0. Configuración inicial
-# =========================
 
-# Número máximo de imágenes a guardar
+# Configuracion inicial
+
+# Numero max de imagenes a guardar
 n_max = 100
 
-# Tamaño al que redimensionaremos cada rostro (para el entrenamiento)
+# Tamaño del resize
 FACE_W, FACE_H = 150, 150
 
 # Rutas del detector DNN
 DNN_PROTO = os.path.join("Models", "deploy.prototxt")
 DNN_MODEL = os.path.join("Models", "res10_300x300_ssd_iter_140000_fp16.caffemodel")
 
-# Verificar que existan los archivos del detector DNN
 if not os.path.isfile(DNN_PROTO) or not os.path.isfile(DNN_MODEL):
     print("Error: no se encuentra el modelo DNN en:")
     print(f"  {DNN_PROTO}")
     print(f"  {DNN_MODEL}")
-    print("Descárgalos y colócalos en la carpeta Models/")
+    print("Colocalos e intente de nuevo/")
     exit(1)
 
-# Cargamos el detector DNN (Res10 SSD)
+# Cargamos el detector DNN
 net_dnn = cv2.dnn.readNetFromCaffe(DNN_PROTO, DNN_MODEL)
 CONF_THRESHOLD = 0.5  # Umbral mínimo para aceptar detección
 
-# Directorio base donde se guardarán los rostros
+# Carpeta donde se guardan los rostros
 BASE_DIR = "Rostros"
 
-# =========================
-# 1. Pedir nombre de usuario
-# =========================
-
+# Pedimos nombre de usuario
 nombre = input("\nNombre: ").strip()
 
-# =========================
-# 2. Crear carpetas si no existen
-# =========================
-
+# Crear carpetas si no existen
 if not os.path.isdir(BASE_DIR):
     os.makedirs(BASE_DIR)
     print(f"Carpeta creada: {BASE_DIR}")
@@ -51,31 +43,25 @@ if not os.path.isdir(user_folder):
     os.makedirs(user_folder)
     print(f"Carpeta creada: {user_folder}")
 
-# =========================
-# 3. Inicializar captura de video
-# =========================
 
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
-    print("Error: no se pudo abrir la cámara.")
+    print("Error: no se pudo abrir la camara.")
     exit(1)
-
-cv2.namedWindow("Captura DNN", cv2.WINDOW_NORMAL)
+  
+cv2.namedWindow("Captura Imagenes", cv2.WINDOW_NORMAL)
 
 count = 0
-print(f"Iniciando captura de hasta {n_max} imágenes para '{nombre}'...")
-
-# =========================
-# 4. Bucle principal
-# =========================
+print(f"Iniciando captura de {n_max} imágenes para '{nombre}'...")
 
 while count < n_max:
+    # Extraemos el frame
     ret, frame = cap.read()
     if not ret:
-        print("Error: no se pudo leer el frame de la cámara.")
+        print("Error: no se pudo leer el frame de la camara.")
         break
 
-    # Espejar (modo “selfie”) y clonar
+    # Modo espejo
     frame = cv2.flip(frame, 1)
     aux = frame.copy()
     alto, ancho = frame.shape[:2]
@@ -92,19 +78,19 @@ while count < n_max:
 
     rostro_detectado = False
 
-    # Recorremos todas las detecciones y tomamos la primera válida
+    # Recorremos todas las detecciones y tomamos la primera valida
     for i in range(detections.shape[2]):
         confianza = float(detections[0, 0, i, 2])
         if confianza < CONF_THRESHOLD:
             continue
 
-        # Recuperar coordenadas absolutas
+        # Coordenadas absolutas
         x1 = int(detections[0, 0, i, 3] * ancho)
         y1 = int(detections[0, 0, i, 4] * alto)
         x2 = int(detections[0, 0, i, 5] * ancho)
         y2 = int(detections[0, 0, i, 6] * alto)
 
-        # Ajustar límites dentro de la imagen
+        # Limites dentro de la imagen
         x1 = max(0, x1)
         y1 = max(0, y1)
         x2 = min(ancho - 1, x2)
@@ -133,7 +119,7 @@ while count < n_max:
         count += 1
         print(f"[{count}/{n_max}] Imagen guardada: {filepath}")
 
-        # Dibujar rectángulo y etiqueta de contador
+        # Dibujar rectangulo y etiqueta de contador
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(
             frame,
@@ -147,13 +133,13 @@ while count < n_max:
         )
 
         rostro_detectado = True
-        break  # Sólo capturamos el primer rostro detectado en este frame
+        break
 
-    # Si no detectó ningún rostro, mostramos mensaje
+    # Si no detecto ningun rostro avisamos usuario
     if not rostro_detectado:
         cv2.putText(
             frame,
-            "No se detecta cara. Ajusta tu posición.",
+            "No se detecta cara. Ajusta tu posicion.",
             (30, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
@@ -176,17 +162,13 @@ while count < n_max:
 
     cv2.imshow("Captura DNN", frame)
 
-    # Pausa breve entre frames
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    # Si ya capturamos un rostro, pausamos 0.2 s para no duplicar imágenes casi idénticas
+    # Si ya capturamos un rostro, pausamos 0.2 s para no duplicar imagenes
     if rostro_detectado:
         time.sleep(0.2)
 
-# =========================
-# 5. Liberar recursos
-# =========================
 
 cap.release()
 cv2.destroyAllWindows()
